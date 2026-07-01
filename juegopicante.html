@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡BOOM CÓSMICO!</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #05050f; font-family: 'Segoe UI', Arial, sans-serif; }
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+}
+
+.overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+}
+.overlay > * { pointer-events: auto; }
+
+.overlay-bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.75);
+}
+
+.panel {
+    position: relative;
+    background: rgba(10, 5, 25, 0.92);
+    border: 2px solid rgba(100, 100, 180, 0.4);
+    border-radius: 16px;
+    padding: 30px 40px;
+    max-width: 560px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: center;
+    color: #ddd;
+    box-shadow: 0 0 60px rgba(50, 30, 120, 0.3);
+}
+
+.panel h1 {
+    font-size: 2.2em;
+    background: linear-gradient(180deg, #ff4444, #ff8800);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+}
+.panel .subtitle {
+    font-size: 0.95em;
+    color: #88bbff;
+    margin-bottom: 20px;
+}
+
+.panel input[type="text"] {
+    background: rgba(20, 10, 40, 0.9);
+    border: 2px solid rgba(100, 100, 200, 0.4);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 1.2em;
+    color: #fff;
+    width: 80%;
+    max-width: 280px;
+    text-align: center;
+    outline: none;
+    margin-bottom: 8px;
+    transition: border-color 0.3s;
+}
+.panel input[type="text"]:focus {
+    border-color: rgba(150, 150, 255, 0.8);
+}
+
+.error-msg {
+    color: #ff4444;
+    font-size: 0.85em;
+    min-height: 1.2em;
+    margin-bottom: 8px;
+}
+
+.hint {
+    color: #888;
+    font-size: 0.85em;
+    margin-bottom: 16px;
+}
+
+.btn-start {
+    background: linear-gradient(135deg, #2a1a5a, #4a2a8a);
+    border: 2px solid rgba(150, 100, 255, 0.5);
+    border-radius: 10px;
+    padding: 10px 30px;
+    font-size: 1.1em;
+    color: #d8c8ff;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 4px;
+}
+.btn-start:hover {
+    background: linear-gradient(135deg, #3a2a7a, #5a3aaa);
+    border-color: rgba(180, 140, 255, 0.8);
+    color: #fff;
+}
+.btn-start:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.instructions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 14px 0;
+}
+.instruction-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+.powerup-keys {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin: 12px 0 6px;
+}
+.powerup-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.powerup-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1em;
+    color: #000;
+}
+.powerup-label {
+    font-size: 0.7em;
+    color: #999;
+}
+
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin: 10px 0;
+}
+.score-table th {
+    color: #ffcc66;
+    font-weight: normal;
+    border-bottom: 1px solid rgba(100,100,150,0.3);
+    padding: 4px 6px;
+}
+.score-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(100,100,150,0.15);
+}
+.score-table .highlight {
+    color: #ffffaa;
+    font-weight: bold;
+}
+
+.section-title {
+    color: #ffcc66;
+    font-size: 0.9em;
+    margin: 14px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.credits {
+    font-size: 0.75em;
+    color: #666;
+    margin-top: 14px;
+    line-height: 1.4;
+}
+
+.gameover-title {
+    font-size: 2.2em;
+    color: #ff4444;
+    margin-bottom: 10px;
+}
+.gameover-score {
+    font-size: 1.6em;
+    color: #ffff00;
+    margin: 6px 0;
+}
+.gameover-detail {
+    font-size: 0.95em;
+    color: #aac;
+    margin: 2px 0;
+}
+.gameover-divider {
+    border: none;
+    border-top: 1px solid rgba(100,100,150,0.3);
+    margin: 12px 0;
+}
+.gameover-hint {
+    color: #888;
+    font-size: 0.85em;
+    margin-top: 14px;
+}
+
+#gameOverScreen .panel {
+    max-width: 580px;
+}
+
+.hidden { display: none !important; }
+
+/* Scrollbar styling */
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+.panel::-webkit-scrollbar-thumb { background: rgba(100,100,200,0.3); border-radius: 3px; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="overlay">
+    <div class="overlay-bg"></div>
+    <div class="panel">
+        <h1>¡BOOM CÓSMICO!</h1>
+        <div class="subtitle">Sobrevive, explora y conquista el universo</div>
+        <div style="margin: 12px 0 6px; font-size: 0.9em; color: #b8c8ff;">Ingresa tu nombre</div>
+        <input type="text" id="nameInput" maxlength="15" placeholder="Nombre..." autocomplete="off">
+        <div class="error-msg" id="loginError"></div>
+        <button class="btn-start" id="loginBtn" disabled>Jugar</button>
+
+        <div class="section-title" style="margin-top:18px;">Top de Puntuaciones Históricas</div>
+        <table class="score-table" id="histTable">
+            <thead><tr><th>#</th><th>Nombre</th><th>Puntos</th><th>Nivel</th><th>Tiempo</th></tr></thead>
+            <tbody id="histBody"></tbody>
+        </table>
+
+        <div class="section-title">Controles</div>
+        <div class="instructions">
+            <span class="instruction-item">↑ ↓ ← → Mover</span>
+            <span class="instruction-item">P Pausa</span>
+            <span class="instruction-item">ESC Salir</span>
+        </div>
+        <div class="section-title">Potenciadores</div>
+        <div class="powerup-keys">
+            <div class="powerup-item"><div class="powerup-circle" style="background:#0096ff;">E</div><span class="powerup-label">Escudo</span></div>
+            <div class="powerup-item"><div class="powerup-circle" style="background:#6666ff;">S</div><span class="powerup-label">Slow</span></div>
+            <div class="powerup-item"><div class="powerup-circle" style="background:#00cc33;">V</div><span class="powerup-label">Vida</span></div>
+            <div class="powerup-item"><div class="powerup-circle" style="background:#cc00cc;">M</div><span class="powerup-label">Multi</span></div>
+        </div>
+
+        <div class="credits">
+            Hecho por Benja Basiluk.<br>
+            Escuela Superior El Nacional &mdash; Desarrollo de Software
+        </div>
+    </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div id="gameOverScreen" class="overlay hidden">
+    <div class="overlay-bg"></div>
+    <div class="panel">
+        <div class="gameover-title">JUEGO TERMINADO</div>
+        <div class="gameover-score" id="finalScore">0 pts</div>
+        <div class="gameover-detail" id="finalLevel">Nivel: 1</div>
+        <div class="gameover-detail" id="finalTime">Tiempo: 0:00</div>
+        <hr class="gameover-divider">
+        <div class="section-title">TOP PUNTUACIONES</div>
+        <table class="score-table" id="topTable">
+            <thead><tr><th>#</th><th>Nombre</th><th>Puntos</th><th>Nivel</th><th>Tiempo</th></tr></thead>
+            <tbody id="topBody"></tbody>
+        </table>
+        <div class="gameover-hint">Presiona ESPACIO para reiniciar</div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const COLORES = {
+    Aries: [255, 68, 68], Tauro: [68, 255, 68], Geminis: [255, 255, 68],
+    Cancer: [68, 255, 255], Leo: [255, 170, 0], Virgo: [170, 136, 102],
+    Libra: [255, 136, 255], Escorpio: [136, 0, 255], Sagitario: [255, 0, 136],
+    Capricornio: [102, 102, 102], Acuario: [0, 170, 255], Piscis: [170, 68, 255]
+};
+
+const constelaciones = {
+    Orion: [[-100,50],[-50,80],[0,60],[50,70],[100,40],[0,0],[-30,-30],[30,-30]],
+    "Osa Mayor": [[-150,50],[-100,30],[-50,40],[0,20],[50,30],[100,10],[120,-20]],
+    "Osa Menor": [[-30,80],[0,60],[30,50],[20,20],[-20,-10],[-40,-30],[0,0]],
+    Cassiopeia: [[-120,60],[-60,30],[0,50],[60,20],[120,40]],
+    Leo: [[-100,60],[-50,80],[0,50],[50,60],[100,40],[30,0],[0,-40],[-30,-20]],
+    Escorpio: [[-120,40],[-80,20],[-40,10],[0,0],[40,-10],[80,0],[120,20],[100,-30]],
+    Cygnus: [[-100,60],[-50,40],[0,50],[50,40],[100,60],[0,0],[0,-40]],
+    Gemelos: [[-60,80],[-40,60],[-20,70],[20,70],[40,60],[60,80],[-20,20],[20,20]],
+    Tauro: [[-80,40],[-40,20],[0,30],[40,20],[80,40],[0,-20],[-20,-40]],
+    Virgo: [[-100,50],[-50,30],[0,40],[50,20],[100,30],[20,-20],[-20,-40]],
+    Pegaso: [[-100,40],[-50,60],[0,40],[50,60],[100,40],[0,0],[-50,-20],[50,-20]],
+    Andromeda: [[-100,50],[-50,70],[0,50],[50,30],[100,50],[50,0],[0,-30]]
+};
+
+const EMOJIS = {
+    Orion:"🎯", "Osa Mayor":"🐻", "Osa Menor":"🐻", Cassiopeia:"👸",
+    Leo:"🦁", Escorpio:"🦂", Cygnus:"🦢", Gemelos:"👫",
+    Tauro:"🐂", Virgo:"👩", Pegaso:"🐎", Andromeda:"🧚"
+};
+
+// ============================================================
+// UTILITY
+// ============================================================
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function randChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randUniform(a, b) { return Math.random() * (b - a) + a; }
+function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
+
+function rectOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function colorStr(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+function colorStrA(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+// ============================================================
+// LEADERBOARD (localStorage)
+// ============================================================
+const LS_KEY = 'boomcosmico_registro';
+const LS_TEMP_KEY = 'boomcosmico_temp';
+
+function cargarRegistro() {
+    try {
+        const d = localStorage.getItem(LS_KEY);
+        if (d) return JSON.parse(d);
+    } catch(e) {}
+    return [];
+}
+function guardarRegistro(r) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(r)); } catch(e) {}
+}
+function cargarRegistroTemporal() {
+    try {
+        const d = localStorage.getItem(LS_TEMP_KEY);
+        if (d) {
+            let r = JSON.parse(d);
+            if (Array.isArray(r)) {
+                r = r.filter(e => e && e.nombre && e.nombre.toLowerCase() !== 'jaja');
+                guardarRegistroTemporal(r);
+            }
+            return r;
+        }
+    } catch(e) {}
+    return [];
+}
+function guardarRegistroTemporal(r) {
+    try { localStorage.setItem(LS_TEMP_KEY, JSON.stringify(r)); } catch(e) {}
+}
+
+function nombreEnTop(nombre, cacheExtra) {
+    const h = cargarRegistro();
+    const hist = Array.isArray(h) ? h.slice(0,5) : [];
+    const temp = cargarRegistroTemporal();
+    const tempArr = Array.isArray(temp) ? temp : [];
+    const nl = nombre.trim().toLowerCase();
+    for (const e of hist) {
+        if (e && e.nombre && e.nombre.toLowerCase() === nl) return true;
+    }
+    for (const e of tempArr) {
+        if (e && e.nombre && e.nombre.toLowerCase() === nl) return true;
+    }
+    if (cacheExtra) {
+        for (const e of cacheExtra) {
+            if (e && e.nombre && e.nombre.toLowerCase() === nl) return true;
+        }
+    }
+    return false;
+}
+
+function agregarPuntuacionTemporal(nombre, puntos, nivel, tiempo) {
+    try {
+        let r = cargarRegistroTemporal();
+        if (!Array.isArray(r)) r = [];
+        r.push({ nombre, puntos, nivel, tiempo });
+        guardarRegistroTemporal(r);
+    } catch(e) {}
+}
+
+function agregarPuntuacion(nombre, puntos, nivel, tiempo) {
+    let r = cargarRegistro();
+    if (!Array.isArray(r)) r = [];
+    if (r.length >= 5) {
+        const menor = Math.min(...r.map(e => e.puntos));
+        if (puntos <= menor) return;
+    }
+    let existente = -1;
+    for (let i = 0; i < r.length; i++) {
+        if (r[i].nombre === nombre) { existente = i; break; }
+    }
+    if (existente >= 0) {
+        if (puntos > r[existente].puntos) {
+            r[existente] = { nombre, puntos, nivel, tiempo };
+        }
+    } else {
+        r.push({ nombre, puntos, nivel, tiempo });
+    }
+    r.sort((a, b) => b.puntos - a.puntos);
+    r = r.slice(0, 5);
+    guardarRegistro(r);
+}
+
+function renderHistTable() {
+    const tbody = document.getElementById('histBody');
+    const r = cargarRegistro();
+    if (!r.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:#666;padding:8px;">Sin puntuaciones aún</td></tr>';
+        return;
+    }
+    let html = '';
+    for (let i = 0; i < Math.min(r.length, 5); i++) {
+        const e = r[i];
+        const mins = Math.floor((e.tiempo||0) / 60000);
+        const secs = Math.floor(((e.tiempo||0) % 60000) / 1000);
+        html += `<tr><td>${i+1}</td><td>${e.nombre||'-'}</td><td>${e.puntos||0}</td><td>Nv ${e.nivel||1}</td><td>${mins}:${secs.toString().padStart(2,'0')}</td></tr>`;
+    }
+    tbody.innerHTML = html;
+}
+
+// ============================================================
+// SOUND MANAGER (Web Audio Synthesis)
+// ============================================================
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.ready = false;
+        this._initOnInteraction();
+    }
+    _initOnInteraction() {
+        const fn = () => {
+            if (!this.ready) {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.ready = true;
+                } catch(e) {}
+            }
+            document.removeEventListener('click', fn);
+            document.removeEventListener('keydown', fn);
+        };
+        document.addEventListener('click', fn);
+        document.addEventListener('keydown', fn);
+    }
+    _ensure() {
+        if (!this.ready) {
+            try {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.ready = true;
+            } catch(e) { return false; }
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        return true;
+    }
+    _tone(freq, duration, type='sine', volume=0.3) {
+        if (!this._ensure()) return;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        g.gain.setValueAtTime(volume, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        o.start();
+        o.stop(this.ctx.currentTime + duration);
+    }
+    _noise(duration, volume=0.2) {
+        if (!this._ensure()) return;
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buffer;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(volume, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        src.connect(g);
+        g.connect(this.ctx.destination);
+        src.start();
+    }
+    play_estrella() {
+        this._tone(600, 0.1, 'sine', 0.25);
+        setTimeout(() => this._tone(900, 0.08, 'sine', 0.2), 60);
+    }
+    play_powerup() {
+        this._tone(500, 0.1, 'sine', 0.25);
+        setTimeout(() => this._tone(700, 0.1, 'sine', 0.2), 80);
+        setTimeout(() => this._tone(900, 0.12, 'sine', 0.15), 160);
+    }
+    play_golpe() {
+        this._noise(0.15, 0.3);
+        this._tone(150, 0.15, 'sawtooth', 0.15);
+    }
+    play_escudo() {
+        this._tone(800, 0.08, 'sine', 0.2);
+        setTimeout(() => this._tone(1000, 0.08, 'sine', 0.15), 50);
+    }
+    play_combo() {
+        this._tone(523, 0.1, 'sine', 0.25);
+        setTimeout(() => this._tone(659, 0.1, 'sine', 0.2), 70);
+        setTimeout(() => this._tone(784, 0.15, 'sine', 0.15), 140);
+    }
+    play_constelacion() {
+        if (!this._ensure()) return;
+        const notes = [262, 330, 392, 523];
+        notes.forEach((f, i) => {
+            setTimeout(() => this._tone(f, 0.3, 'sine', 0.2), i * 120);
+        });
+        this._tone(659, 0.5, 'sine', 0.15);
+    }
+    play_gameover() {
+        if (!this._ensure()) return;
+        const notes = [400, 350, 300, 200];
+        notes.forEach((f, i) => {
+            setTimeout(() => this._tone(f, 0.3, 'sawtooth', 0.2), i * 180);
+        });
+    }
+}
+
+// ============================================================
+// GAME CLASSES
+// ============================================================
+
+class Rocket {
+    constructor() {
+        this.x = ANCHO / 2;
+        this.y = ALTO / 2;
+        this.vel_base = 6;
+        this.vel = 6;
+        this.vidas = 3;
+        this.escudo = 0;
+        this.multi = 1;
+        this.pts_combo = 0;
+        this.invuln = 0;
+        this.turbo = 0;
+        this.angulo = 0;
+        this.rect = { x: this.x - 20, y: this.y - 15, w: 40, h: 30 };
+    }
+    mover(keys) {
+        let dx = 0, dy = 0;
+        const v = this.vel;
+        if (keys['ArrowUp'] || keys['KeyW']) { dy = -v; this.angulo = 0; }
+        if (keys['ArrowDown'] || keys['KeyS']) { dy = v; this.angulo = 180; }
+        if (keys['ArrowLeft'] || keys['KeyA']) { dx = -v; this.angulo = 270; }
+        if (keys['ArrowRight'] || keys['KeyD']) { dx = v; this.angulo = 90; }
+
+        if (dx !== 0 && dy !== 0) {
+            if (dx > 0 && dy < 0) this.angulo = 45;
+            else if (dx > 0 && dy > 0) this.angulo = 135;
+            else if (dx < 0 && dy > 0) this.angulo = 225;
+            else if (dx < 0 && dy < 0) this.angulo = 315;
+            dx *= 0.707;
+            dy *= 0.707;
+        }
+
+        if (dx !== 0 || dy !== 0) {
+            this.x = clamp(this.x + dx, 20, ANCHO - 20);
+            this.y = clamp(this.y + dy, 80, ALTO - 20);
+        }
+
+        this.rect = { x: this.x - 20, y: this.y - 15, w: 40, h: 30 };
+
+        if (this.invuln > 0) this.invuln -= dt;
+        if (this.escudo > 0) this.escudo -= dt;
+        if (this.turbo > 0) this.turbo -= dt;
+        if (this.pts_combo > 0) {
+            this.pts_combo -= dt;
+            if (this.pts_combo <= 0) this.multi = 1;
+        }
+    }
+    dibujar(ctx) {
+        if (this.invuln > 0 && Math.floor(performance.now() / 100) % 2 === 0) return;
+
+        // Fire trail based on angle
+        const angles = {
+            0: [0, 1], 180: [0, -1], 90: [-1, 0], 270: [1, 0],
+            45: [-0.6, 0.8], 135: [-0.6, -0.8], 225: [0.6, -0.8], 315: [0.6, 0.8]
+        };
+        const [fxDir, fyDir] = angles[this.angulo] || [0, 1];
+
+        // Outer fire particles
+        for (let i = 0; i < 4; i++) {
+            const dist = randInt(18, 35);
+            const fx = this.x + fxDir * dist + randInt(-8, 8);
+            const fy = this.y + fyDir * dist + randInt(-8, 8);
+            const r = randInt(6, 14);
+            const c = randChoice([[255,100,0],[255,150,0],[255,180,0],[255,80,0],[200,40,0]]);
+            ctx.beginPath();
+            ctx.arc(fx, fy, r, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(c);
+            ctx.fill();
+        }
+        // Inner fire particles
+        for (let i = 0; i < 3; i++) {
+            const dist = randInt(10, 28);
+            const fx = this.x + fxDir * dist + randInt(-6, 6);
+            const fy = this.y + fyDir * dist + randInt(-6, 6);
+            const r = randInt(4, 10);
+            const c = randChoice([[255,220,50],[255,255,100],[255,200,0]]);
+            ctx.beginPath();
+            ctx.arc(fx, fy, r, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(c);
+            ctx.fill();
+        }
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angulo * Math.PI / 180);
+
+        // Ship body
+        ctx.beginPath();
+        ctx.moveTo(-12, -10);
+        ctx.lineTo(0, -25);
+        ctx.lineTo(12, -10);
+        ctx.closePath();
+        ctx.fillStyle = '#505050';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(-15, 5);
+        ctx.lineTo(0, -20);
+        ctx.lineTo(15, 5);
+        ctx.lineTo(0, 15);
+        ctx.closePath();
+        ctx.fillStyle = '#c8c8c8';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -20);
+        ctx.lineTo(-8, 5);
+        ctx.lineTo(8, 5);
+        ctx.closePath();
+        ctx.strokeStyle = '#dcdcdc';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Cockpit
+        ctx.beginPath();
+        ctx.arc(0, -5, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#00b4ff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, -5, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#64dcff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, -5, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#c8f0ff';
+        ctx.fill();
+
+        ctx.restore();
+
+        // Shield
+        if (this.escudo > 0) {
+            const time = performance.now() / 20;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 35, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 200, 255, 0.6)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            for (let i = 0; i < 360; i += 45) {
+                const rad = i * Math.PI / 180;
+                const sx = this.x + 32 * Math.cos(rad + time);
+                const sy = this.y + 32 * Math.sin(rad + time);
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(100, 255, 255, 0.8)';
+                ctx.fill();
+            }
+        }
+    }
+}
+
+// ============== STAR ==============
+class Star {
+    constructor(x, y, color, especial) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.especial = especial;
+        this.radio = especial ? 18 : 12;
+        this.rect = { x: x - 20, y: y - 20, w: 40, h: 40 };
+        this.pulso = randUniform(0, Math.PI * 2);
+    }
+    dibujar(ctx) {
+        this.pulso += 0.1;
+        const pulsoTam = Math.sin(this.pulso) * 3;
+
+        if (this.especial) {
+            for (let i = 5; i < 35; i += 10) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, i + pulsoTam, 0, Math.PI * 2);
+                ctx.fillStyle = colorStrA(this.color, 0.3);
+                ctx.fill();
+            }
+            for (let i = 8; i < 20; i += 8) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, i + pulsoTam, 0, Math.PI * 2);
+                ctx.fillStyle = colorStrA(this.color, 0.5);
+                ctx.fill();
+            }
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = colorStr(this.color);
+        ctx.fill();
+    }
+}
+
+// ============== PARTICLE ==============
+class Particle {
+    constructor(x, y, color, explosion) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        let ang, vel;
+        if (explosion) {
+            ang = randUniform(0, Math.PI * 2);
+            vel = randUniform(3, 10);
+        } else {
+            ang = randUniform(-Math.PI/3, Math.PI/3) + randChoice([0, Math.PI]);
+            vel = randUniform(2, 6);
+        }
+        this.vx = Math.cos(ang) * vel;
+        this.vy = Math.sin(ang) * vel;
+        this.vida = 50;
+        this.tam = randInt(4, 10);
+        this.gravedad = explosion ? 0.15 : 0.05;
+    }
+    actualizar() {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.vy += this.gravedad * dt;
+        this.vida -= dt;
+        this.tam = Math.max(1, this.tam - 0.15 * dt);
+    }
+    dibujar(ctx) {
+        if (this.vida > 0 && this.tam > 0) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.tam, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(this.color);
+            ctx.fill();
+        }
+    }
+}
+
+// ============== ASTEROID ==============
+class Asteroid {
+    constructor(desdeMenu) {
+        const lado = randChoice(['arriba','abajo','izquierda','derecha']);
+        const vel = desdeMenu ? randUniform(2, 5) : randUniform(1, 3);
+        if (lado === 'izquierda') {
+            this.x = -60; this.y = randInt(100, ALTO - 100);
+            this.vx = vel; this.vy = randUniform(-0.5, 0.5);
+        } else if (lado === 'derecha') {
+            this.x = ANCHO + 60; this.y = randInt(100, ALTO - 100);
+            this.vx = -vel; this.vy = randUniform(-0.5, 0.5);
+        } else if (lado === 'arriba') {
+            this.x = randInt(100, ANCHO - 100); this.y = -60;
+            this.vx = randUniform(-0.5, 0.5); this.vy = vel;
+        } else {
+            this.x = randInt(100, ANCHO - 100); this.y = ALTO + 60;
+            this.vx = randUniform(-0.5, 0.5); this.vy = -vel;
+        }
+        this.tam = randInt(25, 55);
+        this.rot = randUniform(0, 360);
+        this.velRot = randUniform(-2, 2);
+
+        const tb = randInt(90, 130);
+        this.colorPpal = [tb - 20, tb - 15, tb - 10];
+        this.colorAlto = [tb + 30, tb + 25, tb + 20];
+        this.colorSom = [tb - 40, tb - 35, tb - 30];
+
+        this.puntos = [];
+        const np = randInt(6, 10);
+        for (let i = 0; i < np; i++) {
+            const a = (i / np) * Math.PI * 2;
+            const r = this.tam * randUniform(0.7, 1.0);
+            this.puntos.push([Math.cos(a) * r, Math.sin(a) * r]);
+        }
+        this.crateres = [];
+        for (let i = 0; i < randInt(1, 3); i++) {
+            this.crateres.push({
+                ang: randUniform(0, Math.PI * 2),
+                dist: randUniform(0.2, 0.6),
+                radio: randUniform(0.15, 0.3)
+            });
+        }
+        this.estela = [];
+    }
+    actualizar() {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.rot += this.velRot * dt;
+
+        this.estela.push({
+            x: this.x - this.vx * 4, y: this.y - this.vy * 4,
+            vida: 80, tam: this.tam * 0.8
+        });
+        if (Math.random() < 0.4) {
+            this.estela.push({
+                x: this.x - this.vx * 5 + randUniform(-10, 10),
+                y: this.y - this.vy * 5 + randUniform(-10, 10),
+                vida: 70, tam: this.tam * 0.6
+            });
+        }
+        if (Math.random() < 0.25) {
+            this.estela.push({
+                x: this.x - this.vx * 6 + randUniform(-15, 15),
+                y: this.y - this.vy * 6 + randUniform(-15, 15),
+                vida: 60, tam: this.tam * 0.4
+            });
+        }
+        for (const p of this.estela) {
+            p.vida -= 1 * dt;
+            p.tam *= 0.95;
+        }
+        this.estela = this.estela.filter(p => p.vida > 0);
+        if (this.estela.length > 80) this.estela = this.estela.slice(-80);
+
+        if (this.x < -150 || this.x > ANCHO + 150 || this.y < -150 || this.y > ALTO + 150) return true;
+        return false;
+    }
+    dibujar(ctx) {
+        // Trail
+        for (const p of this.estela) {
+            if (p.vida > 15 && p.tam > 2) {
+                const vr = p.vida / 80;
+                let r, g, b;
+                if (vr > 0.6) {
+                    r = 255;
+                    g = Math.round(200 + 55 * (vr - 0.6) / 0.4);
+                    b = Math.round(50 + 100 * (vr - 0.6) / 0.4);
+                } else if (vr > 0.3) {
+                    r = 255;
+                    g = Math.round(100 + 100 * (vr - 0.3) / 0.3);
+                    b = 0;
+                } else {
+                    r = Math.round(150 + 105 * vr / 0.3);
+                    g = Math.round(30 * vr / 0.3);
+                    b = 0;
+                }
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, Math.max(1, p.tam), 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fill();
+            }
+        }
+
+        // Rotated polygon
+        const pts = this.puntos.map(([px, py]) => {
+            const rad = this.rot * Math.PI / 180;
+            const rx = px * Math.cos(rad) - py * Math.sin(rad);
+            const ry = px * Math.sin(rad) + py * Math.cos(rad);
+            return [this.x + rx, this.y + ry];
+        });
+
+        if (pts.length >= 3) {
+            // Shadow fill
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+            ctx.closePath();
+            ctx.fillStyle = colorStr(this.colorSom);
+            ctx.fill();
+
+            // Outline
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+            ctx.closePath();
+            ctx.strokeStyle = colorStr(this.colorPpal);
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Midpoints highlight
+            const mids = [];
+            for (let i = 0; i < pts.length; i++) {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % pts.length];
+                mids.push([(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]);
+            }
+            if (mids.length >= 3) {
+                ctx.beginPath();
+                ctx.moveTo(mids[0][0], mids[0][1]);
+                for (let i = 1; i < mids.length; i++) ctx.lineTo(mids[i][0], mids[i][1]);
+                ctx.closePath();
+                ctx.fillStyle = colorStr(this.colorAlto);
+                ctx.fill();
+            }
+        }
+
+        // Craters
+        for (const c of this.crateres) {
+            const rad = this.rot * Math.PI / 180;
+            const cx = this.x + Math.cos(c.ang) * c.dist * this.tam;
+            const cy = this.y + Math.sin(c.ang) * c.dist * this.tam;
+            const cr = c.radio * this.tam;
+            ctx.beginPath();
+            ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(this.colorSom);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy, cr * 0.7, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(this.colorPpal);
+            ctx.fill();
+        }
+    }
+}
+
+// ============== METEOR ==============
+class Meteor {
+    constructor(juego, nivel) {
+        this.juego = juego;
+        this.nivel = nivel;
+        const lado = randChoice(['arriba','abajo','izquierda','derecha']);
+        const velBase = 1.5 + (nivel - 1) * 0.4;
+        if (lado === 'arriba') {
+            this.x = randInt(0, ANCHO); this.y = -30;
+            this.vy = randUniform(velBase * 0.5, velBase);
+            this.vx = randUniform(-velBase * 0.5, velBase * 0.5);
+        } else if (lado === 'abajo') {
+            this.x = randInt(0, ANCHO); this.y = ALTO + 30;
+            this.vy = randUniform(-velBase, -velBase * 0.5);
+            this.vx = randUniform(-velBase * 0.5, velBase * 0.5);
+        } else if (lado === 'izquierda') {
+            this.x = -30; this.y = randInt(0, ALTO);
+            this.vx = randUniform(velBase * 0.5, velBase);
+            this.vy = randUniform(-velBase * 0.5, velBase * 0.5);
+        } else {
+            this.x = ANCHO + 30; this.y = randInt(0, ALTO);
+            this.vx = randUniform(-velBase, -velBase * 0.5);
+            this.vy = randUniform(-velBase * 0.5, velBase * 0.5);
+        }
+        this.tam = Math.min(15 + nivel, 30);
+        this.rect = { x: this.x - this.tam, y: this.y - this.tam, w: this.tam * 2, h: this.tam * 2 };
+        this.rot = 0;
+        this.velRot = randUniform(-5, 5);
+        this.tamanoRojo = false;
+        this.fuegoEstela = [];
+    }
+    actualizar() {
+        const slowmo = (this.juego && this.juego.cohete && this.juego.cohete.turbo > 0) ? 0.35 : 1.0;
+        this.x += this.vx * dt * slowmo;
+        this.y += this.vy * dt * slowmo;
+        this.rot += this.velRot * dt * slowmo;
+        this.rect = { x: this.x - this.tam, y: this.y - this.tam, w: this.tam * 2, h: this.tam * 2 };
+
+        if (this.tamanoRojo) {
+            for (let i = 0; i < 2; i++) {
+                const oa = randUniform(0, Math.PI * 2);
+                const dist = randUniform(2, this.tam * 0.8);
+                const fx = this.x - this.vx * randUniform(1, 4) + Math.cos(oa) * dist;
+                const fy = this.y - this.vy * randUniform(1, 4) + Math.sin(oa) * dist;
+                this.fuegoEstela.push({
+                    x: fx, y: fy,
+                    vida: randUniform(15, 30),
+                    tam: randUniform(3, this.tam * 0.5),
+                    fase: randUniform(0, 6.28)
+                });
+            }
+            for (const p of this.fuegoEstela) {
+                p.vida -= randUniform(0.5, 1.5) * dt;
+                p.tam *= 0.96;
+                p.x += randUniform(-0.3, 0.3);
+                p.y += randUniform(-0.3, 0.3);
+            }
+            this.fuegoEstela = this.fuegoEstela.filter(p => p.vida > 0);
+            if (this.fuegoEstela.length > 40) this.fuegoEstela = this.fuegoEstela.slice(-40);
+        }
+    }
+    dibujar(ctx) {
+        if (this.tamanoRojo) {
+            for (const p of this.fuegoEstela) {
+                const vr = p.vida / 30;
+                let r, g, b;
+                if (vr > 0.6) {
+                    r = 255; g = Math.round(200 * (vr - 0.6) / 0.4); b = 0;
+                } else if (vr > 0.3) {
+                    r = 255; g = Math.round(100 * (vr - 0.3) / 0.3); b = 0;
+                } else {
+                    r = Math.round(200 * vr / 0.3); g = 0; b = 0;
+                }
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, Math.max(1, p.tam), 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fill();
+            }
+
+            // Glow rings
+            for (let radio = this.tam + 8; radio > this.tam - 2; radio -= 6) {
+                const alpha = 1 - (radio - this.tam + 2) / 12;
+                const verde = Math.max(0, 80 - (radio - this.tam + 2) * 7);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, radio, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255,${verde},0,${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Hot core layers
+            const layers = [
+                [this.tam * 0.3, '#ffffc8'],
+                [this.tam * 0.5, '#ffc832'],
+                [this.tam * 0.7, '#ff5000'],
+                [this.tam, '#b41400']
+            ];
+            for (const [r, c] of layers) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = c;
+                ctx.fill();
+            }
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.tam, 0, Math.PI * 2);
+            ctx.fillStyle = '#96321e';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.tam - 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#641e14';
+            ctx.fill();
+        }
+    }
+}
+
+// ============== POWERUP ==============
+class PowerUp {
+    constructor(x, y) {
+        this.tipo = randChoice(['escudo', 'slowmo', 'vida', 'multi']);
+        this.x = x;
+        this.y = y;
+        this.rect = { x: x - 25, y: y - 25, w: 50, h: 50 };
+        this.tiempo = 600;
+    }
+    dibujar(ctx) {
+        if (this.tiempo < 120 && Math.floor(performance.now() / 200) % 2 === 0) return;
+
+        const colores = {
+            escudo: [[0, 150, 255], [0, 200, 255], [150, 220, 255]],
+            slowmo: [[70, 70, 200], [100, 100, 255], [180, 180, 255]],
+            vida: [[0, 200, 50], [0, 255, 100], [150, 255, 150]],
+            multi: [[200, 0, 200], [255, 50, 255], [255, 150, 255]]
+        };
+        const [co, cp, cl] = colores[this.tipo];
+
+        for (let i = 30; i > 15; i -= 8) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, i, 0, Math.PI * 2);
+            ctx.fillStyle = colorStr(co);
+            ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = colorStr(cp);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 12, 0, Math.PI * 2);
+        ctx.fillStyle = colorStr(cl);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        const letras = { escudo: 'E', slowmo: 'S', vida: 'V', multi: 'M' };
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(letras[this.tipo], this.x, this.y);
+    }
+}
+
+// ============================================================
+// MAIN GAME
+// ============================================================
+let ANCHO = 800, ALTO = 600;
+let dt = 1;
+
+class Juego {
+    constructor() {
+        this.cohete = new Rocket();
+        this.estrellas = [];
+        this.particulas = [];
+        this.meteoritos = [];
+        this.potenciadores = [];
+        this.constelacionActual = null;
+        this.puntos = 0;
+        this.puntuacionTotal = 0;
+        this.nivel = 1;
+        this.mostrandoConstelacion = false;
+        this.tiempoInicioPausa = 0;
+        this.fondoEstrellas = [];
+        this.nebulosas = [];
+        this.comboActual = 0;
+        this.tiempoCombo = 0;
+        this.meteoritosCreados = 0;
+        this.pausado = false;
+        this.juegoTerminado = false;
+        this.menu = true;
+        this.logueando = true;
+        this.nombreJugador = '';
+        this.errorNombre = null;
+        this.tiempoInicio = performance.now();
+        this.tiempoFinal = 0;
+        this.nivelAlTermino = 1;
+        this.tiempoNivel = 30 * 60;
+        this.alienAparecio = false;
+        this.asteroidesMenu = [];
+        this.modoFuria = false;
+        this.puntuacionGuardada = false;
+        this._registroTemporalCache = null;
+        for (let i = 0; i < 5; i++) this.asteroidesMenu.push(new Asteroid(true));
+        this.crearFondo();
+        this.nuevaConstelacion();
+    }
+
+    crearFondo() {
+        const cols = [[255,107,157],[157,107,255],[107,255,157],[157,255,255],[255,255,107],[255,200,100],[100,200,255]];
+        for (let i = 0; i < 120; i++) {
+            this.fondoEstrellas.push({
+                x: randInt(0, ANCHO), y: randInt(0, ALTO),
+                color: randChoice(cols), tam: randInt(1, 2), fase: randUniform(0, Math.PI * 2)
+            });
+        }
+        const ncols = [[26,10,58],[32,10,74],[21,10,53]];
+        for (let i = 0; i < 8; i++) {
+            this.nebulosas.push({
+                x: randInt(0, ANCHO), y: randInt(0, ALTO),
+                radio: randInt(100, 250), color: randChoice(ncols)
+            });
+        }
+    }
+
+    nuevaConstelacion() {
+        if (this.nivel > 1) {
+            this.puntos += 500 * this.nivel;
+        }
+        const names = Object.keys(constelaciones);
+        this.constelacionActual = randChoice(names);
+        this.estrellas = [];
+
+        const pos = constelaciones[this.constelacionActual];
+        const esc = 3.0;
+        const cx = ANCHO / 2 - 100, cy = ALTO / 2 - 100;
+        const color = COLORES[this.constelacionActual] || [255, 255, 0];
+        const especial = Math.random() < (0.1 + this.nivel * 0.05);
+
+        for (let i = 0; i < pos.length; i++) {
+            const x = pos[i][0] * esc + cx;
+            const y = pos[i][1] * esc + cy;
+            this.estrellas.push(new Star(x, y, color, i === 0 && especial));
+        }
+
+        this.nivel++;
+        this.tiempoNivel = 30 * 60;
+        this.alienAparecio = false;
+        this.modoFuria = false;
+        for (const m of this.meteoritos) m.tamanoRojo = false;
+    }
+
+    capParticulas() {
+        if (this.particulas.length > 150) this.particulas = this.particulas.slice(-150);
+    }
+
+    verificarColisiones() {
+        for (let i = this.estrellas.length - 1; i >= 0; i--) {
+            const estrella = this.estrellas[i];
+            if (rectOverlap(this.cohete.rect, estrella.rect)) {
+                const mult = this.cohete.multi;
+                this.puntuacionTotal += estrella.especial ? 100 * mult : 25 * mult;
+
+                const colores = [[255,0,255],[255,102,255],[255,170,0],[255,255,0],[0,255,255],[255,20,147],[0,255,127]];
+                for (let j = 0; j < 15; j++) {
+                    this.particulas.push(new Particle(estrella.x, estrella.y, randChoice(colores), true));
+                }
+
+                this.comboActual += 1;
+                this.tiempoCombo = 60;
+                this.estrellas.splice(i, 1);
+                sonido.play_estrella();
+            }
+        }
+
+        for (let i = this.potenciadores.length - 1; i >= 0; i--) {
+            const pot = this.potenciadores[i];
+            if (rectOverlap(this.cohete.rect, pot.rect)) {
+                if (pot.tipo === 'escudo') this.cohete.escudo = 300;
+                else if (pot.tipo === 'slowmo') this.cohete.turbo = 180;
+                else if (pot.tipo === 'vida') this.cohete.vidas = Math.min(5, this.cohete.vidas + 1);
+                else if (pot.tipo === 'multi') { this.cohete.multi = 2; this.cohete.pts_combo = 180; }
+
+                for (let j = 0; j < 10; j++) {
+                    this.particulas.push(new Particle(pot.x, pot.y, [0, 255, 0], true));
+                }
+                this.potenciadores.splice(i, 1);
+                sonido.play_powerup();
+                this.puntuacionTotal += 50;
+            }
+        }
+
+        for (let i = this.meteoritos.length - 1; i >= 0; i--) {
+            const met = this.meteoritos[i];
+            if (this.cohete.invuln <= 0 && rectOverlap(this.cohete.rect, met.rect)) {
+                if (this.cohete.escudo > 0) {
+                    for (let j = 0; j < 12; j++) {
+                        this.particulas.push(new Particle(met.x, met.y, [0, 200, 255], true));
+                    }
+                    this.meteoritos.splice(i, 1);
+                    sonido.play_escudo();
+                } else {
+                    this.cohete.vidas -= 1;
+                    this.cohete.invuln = 90;
+                    this.comboActual = 0;
+                    sonido.play_golpe();
+
+                    for (let j = 0; j < 18; j++) {
+                        this.particulas.push(new Particle(this.cohete.x, this.cohete.y, [255, 50, 0], true));
+                    }
+
+                    if (this.cohete.vidas <= 0) {
+                        this.juegoTerminado = true;
+                        sonido.play_gameover();
+                        this.tiempoFinal = performance.now();
+                        this.nivelAlTermino = this.nivel - 1;
+                        const tiempoPartida = Math.max(0, this.tiempoFinal - this.tiempoInicio);
+                        agregarPuntuacionTemporal(this.nombreJugador, this.puntuacionTotal, this.nivelAlTermino, tiempoPartida);
+                        agregarPuntuacion(this.nombreJugador, this.puntuacionTotal, this.nivelAlTermino, tiempoPartida);
+                        this.puntuacionGuardada = true;
+                        this._registroTemporalCache = cargarRegistroTemporal() || [];
+                        const entryActual = { nombre: this.nombreJugador, puntos: this.puntuacionTotal, nivel: this.nivelAlTermino, tiempo: tiempoPartida };
+                        if (!this._registroTemporalCache.some(e => e.nombre === entryActual.nombre && e.puntos === entryActual.puntos)) {
+                            this._registroTemporalCache.push(entryActual);
+                            this._registroTemporalCache.sort((a, b) => b.puntos - a.puntos);
+                        }
+                        this.mostrarGameOver();
+                    } else {
+                        this.cohete.x = ANCHO / 2;
+                        this.cohete.y = ALTO / 2;
+                    }
+                }
+            }
+        }
+    }
+
+    mostrarGameOver() {
+        document.getElementById('finalScore').textContent = this.puntuacionTotal + ' pts';
+        document.getElementById('finalLevel').textContent = 'Nivel: ' + this.nivelAlTermino;
+        const t = Math.max(0, this.tiempoFinal - this.tiempoInicio);
+        const mins = Math.floor(t / 60000);
+        const secs = Math.floor((t % 60000) / 1000);
+        document.getElementById('finalTime').textContent = 'Tiempo: ' + mins + ':' + secs.toString().padStart(2, '0');
+
+        const tbody = document.getElementById('topBody');
+        const reg = (this._registroTemporalCache || cargarRegistroTemporal() || []);
+        const entryActual = { nombre: this.nombreJugador, puntos: this.puntuacionTotal, nivel: this.nivelAlTermino, tiempo: t };
+        if (!reg.some(e => e.nombre === entryActual.nombre && e.puntos === entryActual.puntos)) {
+            reg.push(entryActual);
+            reg.sort((a, b) => b.puntos - a.puntos);
+        }
+
+        const coloresTop = ['#ff4444','#ff6633','#ff9933','#ffcc66','#ffcc99'];
+        let html = '';
+        for (let i = 0; i < Math.min(reg.length, 5); i++) {
+            const e = reg[i];
+            const mt = Math.floor((e.tiempo||0) / 60000);
+            const st = Math.floor(((e.tiempo||0) % 60000) / 1000);
+            const isCurrent = e.nombre === entryActual.nombre && e.puntos === entryActual.puntos;
+            const cls = isCurrent ? ' class="highlight"' : '';
+            const c = coloresTop[i] || '#b0b0b0';
+            html += `<tr${cls}><td style="color:${c}">${i+1}.</td><td style="color:${c}">${(e.nombre||'').slice(0,12)}</td><td style="color:${c}">${e.puntos||0} pts</td><td style="color:${c}">Nv ${e.nivel||1}</td><td style="color:${c}">${mt}:${st.toString().padStart(2,'0')}</td></tr>`;
+        }
+        tbody.innerHTML = html;
+
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+    }
+
+    actualizar(keys) {
+        if (this.pausado || this.juegoTerminado || this.menu) return;
+
+        if (this.mostrandoConstelacion) {
+            if (performance.now() - this.tiempoInicioPausa >= 3000) {
+                this.mostrandoConstelacion = false;
+                this.nuevaConstelacion();
+            }
+            return;
+        }
+
+        this.cohete.mover(keys);
+
+        this.tiempoNivel -= dt;
+        if (this.tiempoNivel <= 0) this.modoFuria = true;
+
+        if (this.modoFuria) {
+            for (const m of this.meteoritos) {
+                m.vx *= (1 + 0.02 * dt);
+                m.vy *= (1 + 0.02 * dt);
+                m.tamanoRojo = true;
+            }
+            if (Math.random() < 0.12 * dt) this.meteoritos.push(new Meteor(this, this.nivel));
+        }
+
+        if (this.comboActual > 0) {
+            this.tiempoCombo -= dt;
+            if (this.tiempoCombo <= 0) this.comboActual = 0;
+        }
+
+        const probMet = Math.min(0.01 + (this.nivel - 1) * 0.015, 0.12);
+        if (Math.random() < probMet * dt) this.meteoritos.push(new Meteor(this, this.nivel));
+
+        for (let i = this.meteoritos.length - 1; i >= 0; i--) {
+            const m = this.meteoritos[i];
+            m.actualizar();
+            if (m.x < -50 || m.x > ANCHO + 50 || m.y < -50 || m.y > ALTO + 50) {
+                this.meteoritos.splice(i, 1);
+            }
+        }
+
+        const probPot = Math.max(0.009 - (this.nivel - 1) * 0.0005, 0.005);
+        if (Math.random() < probPot * dt) {
+            this.potenciadores.push(new PowerUp(randInt(50, ANCHO - 50), randInt(100, ALTO - 50)));
+        }
+
+        for (let i = this.potenciadores.length - 1; i >= 0; i--) {
+            this.potenciadores[i].tiempo -= dt;
+            if (this.potenciadores[i].tiempo <= 0) this.potenciadores.splice(i, 1);
+        }
+
+        for (let i = this.particulas.length - 1; i >= 0; i--) {
+            this.particulas[i].actualizar();
+            if (this.particulas[i].vida <= 0) this.particulas.splice(i, 1);
+        }
+
+        this.verificarColisiones();
+        this.capParticulas();
+
+        if (this.estrellas.length === 0 && !this.mostrandoConstelacion) {
+            this.mostrandoConstelacion = true;
+            this.tiempoInicioPausa = performance.now();
+            this.constelacionMostrada = this.constelacionActual;
+            this.colorEnPausa = COLORES[this.constelacionActual] || [255, 255, 0];
+            sonido.play_constelacion();
+            this.puntuacionTotal += this.puntos;
+            this.meteoritos = [];
+            this.puntos = 0;
+        }
+    }
+
+    dibujarFondo(ctx) {
+        ctx.fillStyle = '#05050f';
+        ctx.fillRect(0, 0, ANCHO, ALTO);
+
+        for (const n of this.nebulosas) {
+            const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radio);
+            grad.addColorStop(0, colorStrA(n.color, 0.15));
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.radio, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        const time = performance.now();
+        for (const s of this.fondoEstrellas) {
+            s.fase += 0.02;
+            const brillo = Math.round(127 + 127 * Math.sin(s.fase));
+            const c = s.color;
+            const br = Math.min(255, c[0] + Math.floor(brillo / 4));
+            const bg = Math.min(255, c[1] + Math.floor(brillo / 4));
+            const bb = Math.min(255, c[2] + Math.floor(brillo / 4));
+            if (s.y < ALTO + 5) {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.tam, 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${br},${bg},${bb})`;
+                ctx.fill();
+            }
+        }
+    }
+
+    dibujar(ctx) {
+        if (this.menu) return; // Background drawn separately in menu mode
+        this.dibujarFondo(ctx);
+
+        for (const m of this.meteoritos) m.dibujar(ctx);
+        for (const p of this.potenciadores) p.dibujar(ctx);
+        for (const e of this.estrellas) e.dibujar(ctx);
+
+        if (this.constelacionActual) {
+            const col = COLORES[this.constelacionActual] || [255, 255, 0];
+            for (let i = 0; i < this.estrellas.length - 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(this.estrellas[i].x, this.estrellas[i].y);
+                ctx.lineTo(this.estrellas[i + 1].x, this.estrellas[i + 1].y);
+                ctx.strokeStyle = colorStr(col);
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        for (const p of this.particulas) p.dibujar(ctx);
+        this.cohete.dibujar(ctx);
+
+        // HUD
+        if (this.constelacionActual) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Constelacion: ' + this.constelacionActual, ANCHO / 2, 15);
+        }
+
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = '#ff00ff';
+        ctx.fillText('Puntos: ' + this.puntuacionTotal, 20, ALTO - 10);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffff00';
+        ctx.fillText('Restantes: ' + this.estrellas.length, ANCHO - 20, ALTO - 10);
+
+        const seg = Math.max(0, Math.round(this.tiempoNivel / 60));
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Complete el nivel', ANCHO - 15, ALTO - 75);
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = this.tiempoNivel < 10 * 60 ? '#ff6666' : '#ffffff';
+        ctx.fillText('Tiempo: ' + seg, ANCHO - 15, ALTO - 50);
+
+        // Lives box
+        const vx = 10, vy = ALTO - 130, vw = 160, vh = 50;
+        ctx.fillStyle = 'rgba(10,5,15,0.8)';
+        ctx.beginPath();
+        ctx.roundRect(vx, vy, vw, vh, 8);
+        ctx.fill();
+        ctx.strokeStyle = '#dc6464';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(vx, vy, vw, vh, 8);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffc8c8';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('VIDAS', vx + vw / 2, vy + 14);
+
+        const heartStart = vx + vw / 2 - ((this.cohete.vidas - 1) * 28) / 2;
+        for (let i = 0; i < this.cohete.vidas; i++) {
+            const hx = heartStart + i * 28;
+            const hy = vy + 34;
+            ctx.fillStyle = '#dc3232';
+            ctx.beginPath();
+            ctx.arc(hx - 6, hy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(hx + 6, hy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(hx - 10, hy + 6);
+            ctx.lineTo(hx, hy + 14);
+            ctx.lineTo(hx + 10, hy + 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#ff6464';
+            ctx.beginPath();
+            ctx.moveTo(hx - 5, hy + 3);
+            ctx.lineTo(hx, hy + 9);
+            ctx.lineTo(hx + 5, hy + 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#dc3232';
+        }
+
+        // Combo
+        if (this.comboActual >= 3) {
+            ctx.fillStyle = '#ffc800';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('COMBO x' + this.comboActual + '!', ANCHO / 2, ALTO - 40);
+        }
+
+        // Constellation complete overlay
+        if (this.mostrandoConstelacion && this.constelacionMostrada) {
+            ctx.fillStyle = 'rgba(5, 0, 25, 0.86)';
+            ctx.fillRect(0, 0, ANCHO, ALTO);
+
+            const t = performance.now();
+            for (let i = 0; i < 5; i++) {
+                const sx = randInt(0, ANCHO);
+                const sy = randInt(0, ALTO);
+                const br = Math.round(100 + 100 * Math.sin(t * 0.003 + i));
+                ctx.fillStyle = `rgb(${Math.floor(br/3)},${Math.floor(br/3)},${Math.floor(br/2+30)})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, randInt(1, 2), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const col = this.colorEnPausa || [255, 255, 0];
+            const emoji = EMOJIS[this.constelacionMostrada] || '✨';
+
+            // Emoji circles
+            ctx.strokeStyle = 'rgba(30, 10, 50, 0.8)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(150, 180, 100, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.font = '72px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, 150, 180);
+
+            ctx.beginPath();
+            ctx.arc(ANCHO - 150, 180, 100, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillText(emoji, ANCHO - 150, 180);
+
+            // Title
+            ctx.font = 'bold 56px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(this.constelacionMostrada, ANCHO / 2, 25);
+            ctx.fillStyle = colorStr(col);
+            ctx.fillText(this.constelacionMostrada, ANCHO / 2 + 2, 27);
+
+            // Lines
+            ctx.strokeStyle = colorStr(col);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(ANCHO / 2 - 130, 60);
+            ctx.lineTo(ANCHO / 2 - 50, 60);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(ANCHO / 2 + 50, 60);
+            ctx.lineTo(ANCHO / 2 + 130, 60);
+            ctx.stroke();
+
+            // Level message
+            ctx.font = '22px sans-serif';
+            ctx.fillStyle = '#ffdc64';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('¡CONSTELACION COMPLETADA! - NIVEL ' + (this.nivel - 1), ANCHO / 2, ALTO - 40);
+            ctx.font = '18px sans-serif';
+            ctx.fillStyle = '#ffc8ff';
+            ctx.fillText('Puntos: ' + this.puntuacionTotal, ANCHO / 2, ALTO - 15);
+
+            // Constellation drawing
+            const pos = constelaciones[this.constelacionMostrada] || [];
+            const esc = 3.0;
+            const cx = ANCHO / 2, cy = ALTO / 2;
+            for (const p of pos) {
+                const px = p[0] * esc + cx;
+                const py = p[1] * esc + cy;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(px, py, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = colorStr(col);
+                ctx.beginPath();
+                ctx.arc(px, py, 10, 0, Math.PI * 2);
+                ctx.fill();
+                const rb = 6 + Math.sin(t * 0.01) * 2;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(px, py, rb, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            for (let i = 0; i < pos.length - 1; i++) {
+                const x1 = pos[i][0] * esc + cx;
+                const y1 = pos[i][1] * esc + cy;
+                const x2 = pos[i + 1][0] * esc + cx;
+                const y2 = pos[i + 1][1] * esc + cy;
+                ctx.strokeStyle = colorStr(col);
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        // Pause
+        if (this.pausado) {
+            ctx.fillStyle = 'rgba(5,5,15,0.5)';
+            ctx.fillRect(0, 0, ANCHO, ALTO);
+            ctx.fillStyle = '#ffff00';
+            ctx.font = 'bold 48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('PAUSADO', ANCHO / 2, ALTO / 2);
+        }
+    }
+
+    dibujarMenu(ctx) {
+        this.dibujarFondo(ctx);
+
+        // Menu asteroids
+        for (let i = this.asteroidesMenu.length - 1; i >= 0; i--) {
+            const a = this.asteroidesMenu[i];
+            const remove = a.actualizar();
+            a.dibujar(ctx);
+            if (remove) {
+                this.asteroidesMenu.splice(i, 1);
+                this.asteroidesMenu.push(new Asteroid(true));
+            }
+        }
+
+        // Glow title (only in menu, not during game over)
+        if (!this.juegoTerminado) {
+            const t = performance.now();
+            const faseColor = Math.sin(t * 0.004);
+            const r = 255;
+            const g = Math.round(clamp(130 + 50 * faseColor, 80, 180));
+            const b = Math.round(clamp(65 + 35 * faseColor, 30, 100));
+            const offY = Math.round(8 * Math.sin(t * 0.003));
+
+            for (const glow of [12, 8, 5]) {
+                const gr = Math.round(clamp(r / 3 + glow * 5, 0, 255));
+                const gg = Math.round(clamp(g / 3 + glow * 5, 0, 255));
+                const gb = Math.round(clamp(b / 3 + glow * 5, 0, 255));
+                ctx.fillStyle = `rgb(${gr},${gg},${gb})`;
+                ctx.font = 'bold 60px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText('¡BOOM CÓSMICO!', ANCHO / 2, 55 + offY + glow);
+            }
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.font = 'bold 58px sans-serif';
+            ctx.fillText('¡BOOM CÓSMICO!', ANCHO / 2, 55 + offY);
+
+            ctx.fillStyle = '#ffdc96';
+            ctx.font = 'bold 58px sans-serif';
+            ctx.fillText('¡BOOM CÓSMICO!', ANCHO / 2 + 2, 57 + offY);
+
+            const cicloSub = Math.sin(t * 0.002);
+            const csr = Math.round(150 + 20 * cicloSub);
+            const csg = Math.round(200 + 20 * cicloSub);
+            const csb = 255;
+            ctx.fillStyle = `rgb(${csr},${csg},${csb})`;
+            ctx.font = '22px sans-serif';
+            ctx.fillText('Sobrevive, explora y conquista el universo', ANCHO / 2, 130);
+        }
+
+        if (this.logueando || this.juegoTerminado) {
+            // Drawn by HTML overlay or hidden during game over
+        } else {
+            // Arrows
+            const ax = ANCHO / 2, ay = 200;
+            ctx.strokeStyle = '#64c8ff';
+            ctx.lineWidth = 3;
+
+            // Up arrow
+            ctx.beginPath();
+            ctx.moveTo(ax, ay); ctx.lineTo(ax - 15, ay + 20); ctx.lineTo(ax + 15, ay + 20);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+            ctx.fill();
+            ctx.stroke();
+            // Down arrow
+            ctx.beginPath();
+            ctx.moveTo(ax, ay + 70); ctx.lineTo(ax - 15, ay + 50); ctx.lineTo(ax + 15, ay + 50);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+            ctx.fill();
+            ctx.stroke();
+            // Left arrow
+            ctx.beginPath();
+            ctx.moveTo(ax - 30, ay + 35); ctx.lineTo(ax - 10, ay + 20); ctx.lineTo(ax - 10, ay + 50);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+            ctx.fill();
+            ctx.stroke();
+            // Right arrow
+            ctx.beginPath();
+            ctx.moveTo(ax + 30, ay + 35); ctx.lineTo(ax + 10, ay + 20); ctx.lineTo(ax + 10, ay + 50);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.3)';
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#96dcff';
+            ctx.font = '18px sans-serif';
+            ctx.textBaseline = 'top';
+            ctx.fillText('MOVER con flechas del teclado', ANCHO / 2, 280);
+
+            // Power-up legend
+            const cy = 320;
+            const items = [
+                { x: ANCHO / 2 - 200, c1: '#0096ff', c2: '#00c8ff', l: 'E', n: 'Escudo' },
+                { x: ANCHO / 2 - 60, c1: '#4646c8', c2: '#6464ff', l: 'S', n: 'Slow' },
+                { x: ANCHO / 2 + 80, c1: '#00c832', c2: '#00ff64', l: 'V', n: 'Vida' },
+                { x: ANCHO / 2 + 220, c1: '#c800c8', c2: '#ff32ff', l: 'M', n: 'Multi' }
+            ];
+            for (const item of items) {
+                for (let r = 18; r > 10; r -= 4) {
+                    ctx.beginPath();
+                    ctx.arc(item.x, cy, r, 0, Math.PI * 2);
+                    ctx.fillStyle = item.c1;
+                    ctx.fill();
+                }
+                ctx.beginPath();
+                ctx.arc(item.x, cy, 7, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.l, item.x, cy);
+                ctx.fillStyle = '#96c8ff';
+                ctx.font = '13px sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(item.n, item.x, cy + 24);
+            }
+
+            ctx.fillStyle = '#00ffff';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Presiona ESPACIO para comenzar', ANCHO / 2, 400);
+
+            ctx.fillStyle = '#666';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('Hecho por Benja Basiluk.', ANCHO / 2, 450);
+            ctx.fillStyle = '#666';
+            ctx.font = '13px sans-serif';
+            ctx.fillText('Escuela Superior El Nacional — Desarrollo de Software', ANCHO / 2, 470);
+        }
+    }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const sonido = new SoundManager();
+
+let game;
+let keys = {};
+
+function resizeCanvas() {
+    ANCHO = window.innerWidth;
+    ALTO = window.innerHeight;
+    canvas.width = ANCHO;
+    canvas.height = ALTO;
+    if (game) {
+        // Reposition rocket if within game
+        if (game.cohete) {
+            game.cohete.x = clamp(game.cohete.x, 20, ANCHO - 20);
+            game.cohete.y = clamp(game.cohete.y, 80, ALTO - 20);
+        }
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Login handling
+const nameInput = document.getElementById('nameInput');
+const loginError = document.getElementById('loginError');
+const loginBtn = document.getElementById('loginBtn');
+const loginScreen = document.getElementById('loginScreen');
+
+renderHistTable();
+
+nameInput.addEventListener('input', () => {
+    const val = nameInput.value.trim();
+    loginBtn.disabled = val.length < 3;
+    loginError.textContent = '';
+});
+
+function handleLogin() {
+    const nombre = nameInput.value.trim();
+    if (nombre.length < 3) {
+        loginError.textContent = 'Minimo 3 letras';
+        return;
+    }
+    if (nombreEnTop(nombre, game ? game._registroTemporalCache : null)) {
+        loginError.textContent = 'Nombre ya en uso';
+        return;
+    }
+    game.nombreJugador = nombre;
+    game.logueando = false;
+    loginScreen.classList.add('hidden');
+    loginError.textContent = '';
+    game.menu = true;
+}
+
+nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+});
+loginBtn.addEventListener('click', handleLogin);
+
+// Keyboard input
+document.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+
+    if (e.code === 'Escape') {
+        // handled below in game loop
+    }
+    if (e.code === 'KeyP' && game && !game.menu && !game.juegoTerminado) {
+        game.pausado = !game.pausado;
+    }
+    if (e.code === 'Space') {
+        if (game && game.menu && !game.logueando) {
+            game.menu = false;
+            try { if (sonido.ctx && sonido.ctx.state === 'suspended') sonido.ctx.resume(); } catch(e) {}
+        } else if (game && game.juegoTerminado) {
+            // Restart
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            game = new Juego();
+            game.menu = true;
+            game.logueando = true;
+            game.errorNombre = null;
+            nameInput.value = '';
+            loginBtn.disabled = true;
+            loginScreen.classList.remove('hidden');
+            renderHistTable();
+        }
+    }
+    if (e.code === 'Enter' && game && game.menu && game.logueando) {
+        handleLogin();
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+});
+
+// Fix roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (r > w / 2) r = w / 2;
+        if (r > h / 2) r = h / 2;
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        return this;
+    };
+}
+
+// Game loop
+let lastTime = 0;
+
+game = new Juego();
+
+function loop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const delta = timestamp - lastTime;
+    lastTime = timestamp;
+    dt = Math.min(delta / (1000 / 60), 3);
+
+    // Always draw background for menu/gameover
+    if (game.menu || game.juegoTerminado) {
+        game.dibujarMenu(ctx);
+    } else {
+        game.actualizar(keys);
+        game.dibujar(ctx);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
