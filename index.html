@@ -695,6 +695,7 @@ class Rocket {
         this.y = ALTO / 2;
         this.vel_base = 6;
         this.vel = 6;
+        this.touchScale = ES_TACTIL ? 0.6 : 1.0;
         this.vidas = 3;
         this.escudo = 0;
         this.multi = 1;
@@ -706,11 +707,11 @@ class Rocket {
     }
     mover(keys) {
         let dx = 0, dy = 0;
-        const v = this.vel;
-        if (keys['ArrowUp'] || keys['KeyW']) { dy = -v; this.angulo = 0; }
-        if (keys['ArrowDown'] || keys['KeyS']) { dy = v; this.angulo = 180; }
-        if (keys['ArrowLeft'] || keys['KeyA']) { dx = -v; this.angulo = 270; }
-        if (keys['ArrowRight'] || keys['KeyD']) { dx = v; this.angulo = 90; }
+        const vel = this.vel * this.touchScale;
+        if (keys['ArrowUp'] || keys['KeyW']) { dy = -vel; this.angulo = 0; }
+        if (keys['ArrowDown'] || keys['KeyS']) { dy = vel; this.angulo = 180; }
+        if (keys['ArrowLeft'] || keys['KeyA']) { dx = -vel; this.angulo = 270; }
+        if (keys['ArrowRight'] || keys['KeyD']) { dx = vel; this.angulo = 90; }
 
         if (dx !== 0 && dy !== 0) {
             if (dx > 0 && dy < 0) this.angulo = 45;
@@ -1252,8 +1253,10 @@ class PowerUp {
 // ============================================================
 // MAIN GAME
 // ============================================================
-let ANCHO = 800, ALTO = 600;
+const ANCHO = 1280, ALTO = 720;
+const DISEÑO_W = ANCHO, DISEÑO_H = ALTO;
 let dt = 1;
+const ES_TACTIL = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 class Juego {
     constructor() {
@@ -1556,6 +1559,7 @@ class Juego {
     }
 
     dibujar(ctx) {
+        applyScale(ctx);
         if (this.menu) return; // Background drawn separately in menu mode
         this.dibujarFondo(ctx);
 
@@ -1773,6 +1777,7 @@ class Juego {
     }
 
     dibujarMenu(ctx) {
+        applyScale(ctx);
         this.dibujarFondo(ctx);
 
         // Menu asteroids
@@ -1921,18 +1926,18 @@ const sonido = new SoundManager();
 let game;
 let keys = {};
 
+function applyScale(ctx) {
+    const sx = canvas.width / ANCHO;
+    const sy = canvas.height / ALTO;
+    const s = Math.min(sx, sy);
+    const ox = (canvas.width - ANCHO * s) / 2;
+    const oy = (canvas.height - ALTO * s) / 2;
+    ctx.setTransform(s, 0, 0, s, ox, oy);
+}
+
 function resizeCanvas() {
-    ANCHO = window.innerWidth;
-    ALTO = window.innerHeight;
-    canvas.width = ANCHO;
-    canvas.height = ALTO;
-    if (game) {
-        // Reposition rocket if within game
-        if (game.cohete) {
-            game.cohete.x = clamp(game.cohete.x, 20, ANCHO - 20);
-            game.cohete.y = clamp(game.cohete.y, 80, ALTO - 20);
-        }
-    }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -2060,7 +2065,6 @@ loopInit();
 // ============================================================
 // MOBILE TOUCH CONTROLS
 // ============================================================
-const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const rotateWarning = document.getElementById('rotateWarning');
 const touchControls = document.getElementById('touchControls');
 const joystickZone = document.getElementById('joystickZone');
@@ -2074,7 +2078,7 @@ let joyTouchId = null;
 function isLandscape() { return window.innerWidth > window.innerHeight; }
 
 function updateOrientation() {
-    if (!isTouchDevice) return;
+    if (!ES_TACTIL) return;
     if (isLandscape()) {
         rotateWarning.style.display = 'none';
         touchControls.style.display = '';
@@ -2085,7 +2089,7 @@ function updateOrientation() {
 }
 
 function updateTouchButtons() {
-    if (!isTouchDevice || !game || !isLandscape()) return;
+    if (!ES_TACTIL || !game || !isLandscape()) return;
     if (game.logueando) {
         btnSpace.style.display = 'none';
         btnPause.style.display = 'none';
@@ -2265,7 +2269,7 @@ btnFullscreen.addEventListener('touchstart', function(e) {
 
 // ---- PREVENT CONTEXT MENU ON LONG PRESS ----
 document.addEventListener('contextmenu', function(e) {
-    if (isTouchDevice) e.preventDefault();
+    if (ES_TACTIL) e.preventDefault();
 });
 
 // ---- KEYBOARD: also prevent default on Space to avoid scroll ----
