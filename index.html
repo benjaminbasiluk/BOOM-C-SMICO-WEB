@@ -232,6 +232,127 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05050f; f
 .panel::-webkit-scrollbar { width: 6px; }
 .panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
 .panel::-webkit-scrollbar-thumb { background: rgba(100,100,200,0.3); border-radius: 3px; }
+
+/* ===== MOBILE CONTROLS ===== */
+.rotate-warning {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #05050f;
+    color: #8ab8ff;
+    font-family: sans-serif;
+}
+.rotate-warning .rotate-icon {
+    font-size: 80px;
+    animation: rotateHint 2s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+@keyframes rotateHint {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+}
+.rotate-warning p { font-size: 1.4em; margin: 8px 0; }
+.rotate-warning span { font-size: 0.9em; color: #666; }
+
+.touch-controls {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 20;
+    pointer-events: none;
+    touch-action: none;
+}
+.touch-controls > * { pointer-events: auto; }
+
+.joystick-zone {
+    position: absolute;
+    bottom: 30px; left: 30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(60, 80, 120, 0.25);
+    border: 2px solid rgba(100, 150, 255, 0.25);
+    touch-action: none;
+}
+.joystick-knob {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,180,255,0.6), rgba(60,100,200,0.4));
+    border: 2px solid rgba(150, 200, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: none;
+    touch-action: none;
+}
+
+.action-buttons {
+    position: absolute;
+    bottom: 40px; right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+}
+.action-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 2px solid rgba(200, 200, 255, 0.3);
+    background: rgba(30, 40, 70, 0.5);
+    color: #dde;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.15s;
+}
+.action-btn:active, .action-btn.pressed {
+    background: rgba(80, 120, 200, 0.6);
+    border-color: rgba(150, 200, 255, 0.6);
+}
+.space-btn {
+    width: 76px; height: 76px;
+    font-size: 32px;
+    background: rgba(40, 80, 140, 0.4);
+    border-color: rgba(100, 180, 255, 0.35);
+}
+.pause-btn { font-size: 24px; }
+
+.fullscreen-btn {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 1px solid rgba(200, 200, 255, 0.2);
+    background: rgba(20, 25, 50, 0.5);
+    color: #99b;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+    .touch-controls { display: none; }
+    .rotate-warning { display: flex; }
+}
+@media (orientation: landscape) and (pointer: coarse) {
+    .rotate-warning { display: none; }
+}
+@media (pointer: fine) {
+    .touch-controls { display: none !important; }
+    .rotate-warning { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -291,6 +412,25 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05050f; f
         </table>
         <div class="gameover-hint">Presiona ESPACIO para reiniciar</div>
     </div>
+</div>
+
+<!-- ROTATE WARNING -->
+<div id="rotateWarning" class="rotate-warning" style="display:none">
+    <div class="rotate-icon">↻</div>
+    <p>Girá tu dispositivo para jugar</p>
+    <span>Modo horizontal requerido</span>
+</div>
+
+<!-- TOUCH CONTROLS -->
+<div id="touchControls" class="touch-controls" style="display:none">
+    <div id="joystickZone" class="joystick-zone">
+        <div id="joystickKnob" class="joystick-knob"></div>
+    </div>
+    <div id="actionButtons" class="action-buttons">
+        <button id="btnPause" class="action-btn pause-btn">⏸</button>
+        <button id="btnSpace" class="action-btn space-btn">▶</button>
+    </div>
+    <button id="btnFullscreen" class="fullscreen-btn">⛶</button>
 </div>
 
 <script>
@@ -1899,7 +2039,6 @@ function loop(timestamp) {
     lastTime = timestamp;
     dt = Math.min(delta / (1000 / 60), 3);
 
-    // Always draw background for menu/gameover
     if (game.menu || game.juegoTerminado) {
         game.dibujarMenu(ctx);
     } else {
@@ -1907,10 +2046,215 @@ function loop(timestamp) {
         game.dibujar(ctx);
     }
 
+    updateTouchButtons();
+
     requestAnimationFrame(loop);
 }
 
-requestAnimationFrame(loop);
+function loopInit() {
+    game = new Juego();
+    requestAnimationFrame(loop);
+}
+loopInit();
+
+// ============================================================
+// MOBILE TOUCH CONTROLS
+// ============================================================
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const rotateWarning = document.getElementById('rotateWarning');
+const touchControls = document.getElementById('touchControls');
+const joystickZone = document.getElementById('joystickZone');
+const joystickKnob = document.getElementById('joystickKnob');
+const btnSpace = document.getElementById('btnSpace');
+const btnPause = document.getElementById('btnPause');
+const btnFullscreen = document.getElementById('btnFullscreen');
+
+let joyTouchId = null;
+
+function isLandscape() { return window.innerWidth > window.innerHeight; }
+
+function updateOrientation() {
+    if (!isTouchDevice) return;
+    if (isLandscape()) {
+        rotateWarning.style.display = 'none';
+        touchControls.style.display = '';
+    } else {
+        rotateWarning.style.display = '';
+        touchControls.style.display = 'none';
+    }
+}
+
+function updateTouchButtons() {
+    if (!isTouchDevice || !game || !isLandscape()) return;
+    if (game.logueando) {
+        btnSpace.style.display = 'none';
+        btnPause.style.display = 'none';
+        return;
+    }
+    const menuAfterLogin = game.menu && !game.logueando;
+    if (menuAfterLogin || game.juegoTerminado) {
+        btnSpace.style.display = '';
+        btnPause.style.display = 'none';
+        btnSpace.textContent = game.juegoTerminado ? '↻' : '▶';
+    } else if (!game.menu && !game.logueando) {
+        btnSpace.style.display = 'none';
+        btnPause.style.display = '';
+    } else {
+        btnSpace.style.display = 'none';
+        btnPause.style.display = 'none';
+    }
+}
+
+// Orientation
+window.addEventListener('resize', updateOrientation);
+updateOrientation();
+
+// ---- JOYSTICK ----
+function clearJoyDirections() {
+    keys['ArrowUp'] = false;
+    keys['ArrowDown'] = false;
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+}
+
+joystickZone.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (joyTouchId !== null) return;
+    const touch = e.changedTouches[0];
+    joyTouchId = touch.identifier;
+    const rect = joystickZone.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    processJoyMove(touch.clientX, touch.clientY, cx, cy);
+});
+
+joystickZone.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (joyTouchId === null) return;
+    const rect = joystickZone.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    for (const touch of e.changedTouches) {
+        if (touch.identifier === joyTouchId) {
+            processJoyMove(touch.clientX, touch.clientY, cx, cy);
+        }
+    }
+});
+
+joystickZone.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    for (const touch of e.changedTouches) {
+        if (touch.identifier === joyTouchId) {
+            joyTouchId = null;
+            clearJoyDirections();
+            joystickKnob.style.transform = 'translate(-50%, -50%)';
+        }
+    }
+});
+
+joystickZone.addEventListener('touchcancel', function(e) {
+    joyTouchId = null;
+    clearJoyDirections();
+    joystickKnob.style.transform = 'translate(-50%, -50%)';
+});
+
+function processJoyMove(tx, ty, cx, cy) {
+    let dx = tx - cx;
+    let dy = ty - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const DEAD_ZONE = 12;
+    const RADIUS = 55;
+
+    if (dist < DEAD_ZONE) {
+        clearJoyDirections();
+        joystickKnob.style.transform = 'translate(-50%, -50%)';
+        return;
+    }
+
+    const clampDist = Math.min(dist, RADIUS);
+    const nx = (dx / dist) * clampDist;
+    const ny = (dy / dist) * clampDist;
+    joystickKnob.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`;
+
+    const ndx = dx / dist;
+    const ndy = dy / dist;
+
+    clearJoyDirections();
+    if (ndy < -0.4) keys['ArrowUp'] = true;
+    if (ndy > 0.4) keys['ArrowDown'] = true;
+    if (ndx < -0.4) keys['ArrowLeft'] = true;
+    if (ndx > 0.4) keys['ArrowRight'] = true;
+}
+
+// ---- ACTION BUTTONS ----
+function simulateSpace() {
+    if (!game) return;
+    if (game.menu && !game.logueando) {
+        game.menu = false;
+        clearJoyDirections();
+        try { if (sonido.ctx && sonido.ctx.state === 'suspended') sonido.ctx.resume(); } catch(e) {}
+    } else if (game.juegoTerminado) {
+        document.getElementById('gameOverScreen').classList.add('hidden');
+        game = new Juego();
+        game.menu = true;
+        game.logueando = true;
+        game.errorNombre = null;
+        nameInput.value = '';
+        loginBtn.disabled = true;
+        loginScreen.classList.remove('hidden');
+        renderHistTable();
+    }
+}
+
+btnSpace.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    this.classList.add('pressed');
+    simulateSpace();
+});
+btnSpace.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    this.classList.remove('pressed');
+});
+btnSpace.addEventListener('touchcancel', function(e) {
+    this.classList.remove('pressed');
+});
+
+btnPause.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    this.classList.add('pressed');
+    if (game && !game.menu && !game.juegoTerminado) {
+        game.pausado = !game.pausado;
+        keys['KeyP'] = true;
+    }
+});
+btnPause.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    this.classList.remove('pressed');
+    keys['KeyP'] = false;
+});
+btnPause.addEventListener('touchcancel', function(e) {
+    this.classList.remove('pressed');
+    keys['KeyP'] = false;
+});
+
+// ---- FULLSCREEN ----
+btnFullscreen.addEventListener('click', function() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function(){});
+    } else {
+        document.exitFullscreen().catch(function(){});
+    }
+});
+
+// ---- PREVENT CONTEXT MENU ON LONG PRESS ----
+document.addEventListener('contextmenu', function(e) {
+    if (isTouchDevice) e.preventDefault();
+});
+
+// ---- KEYBOARD: also prevent default on Space to avoid scroll ----
+document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') e.preventDefault();
+});
 </script>
 </body>
 </html>
