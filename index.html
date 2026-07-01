@@ -2238,12 +2238,29 @@ btnPause.addEventListener('touchcancel', function(e) {
 });
 
 // ---- FULLSCREEN ----
-btnFullscreen.addEventListener('click', function() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(function(){});
+function toggleFullscreen() {
+    const el = document.documentElement;
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+    if (!fsEl) {
+        const request = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (request) {
+            request.call(el).catch(function(){});
+        }
     } else {
-        document.exitFullscreen().catch(function(){});
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        if (exit) {
+            exit.call(document).catch(function(){});
+        }
     }
+}
+// Hide fullscreen button if API not available
+if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen && !document.documentElement.mozRequestFullScreen && !document.documentElement.msRequestFullscreen) {
+    btnFullscreen.style.display = 'none';
+}
+btnFullscreen.addEventListener('click', toggleFullscreen);
+btnFullscreen.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    toggleFullscreen();
 });
 
 // ---- PREVENT CONTEXT MENU ON LONG PRESS ----
