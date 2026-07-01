@@ -695,7 +695,7 @@ class Rocket {
         this.y = ALTO / 2;
         this.vel_base = 6;
         this.vel = 6;
-        this.touchScale = ES_TACTIL ? 0.6 : 1.0;
+        this.touchScale = ES_TACTIL ? 0.75 : 1.0;
         this.vidas = 3;
         this.escudo = 0;
         this.multi = 1;
@@ -2256,10 +2256,6 @@ function toggleFullscreen() {
             exit.call(document).catch(function(){});
         }
     }
-}
-// Hide fullscreen button if API not available
-if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen && !document.documentElement.mozRequestFullScreen && !document.documentElement.msRequestFullscreen) {
-    btnFullscreen.style.display = 'none';
 }
 btnFullscreen.addEventListener('click', toggleFullscreen);
 btnFullscreen.addEventListener('touchstart', function(e) {
